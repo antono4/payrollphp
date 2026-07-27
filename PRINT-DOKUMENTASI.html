@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi Lengkap - Payroll System V2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background: white;
+        }
+        
+        /* PRINT SETTINGS */
+        @media print {
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+            
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+        }
+        
+        /* COVER PAGE */
+        .cover {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        .cover-logo {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            margin-bottom: 40px;
+        }
+        
+        .cover h1 {
+            font-size: 42pt;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .cover h2 {
+            font-size: 20pt;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        
+        .cover-divider {
+            width: 100px;
+            height: 4px;
+            background: white;
+            border-radius: 2px;
+            margin: 30px auto;
+        }
+        
+        .cover-info {
+            margin-top: 60px;
+            font-size: 12pt;
+            opacity: 0.8;
+        }
+        
+        .cover-info p { margin: 5px 0; }
+        
+        /* CONTENT */
+        .container {
+            max-width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            font-size: 24pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3b82f6;
+        }
+        
+        h2 {
+            font-size: 16pt;
+            font-weight: 600;
+            color: #1e40af;
+            margin: 25px 0 15px 0;
+        }
+        
+        h3 {
+            font-size: 13pt;
+            font-weight: 600;
+            color: #3730a3;
+            margin: 20px 0 10px 0;
+        }
+        
+        p { margin-bottom: 12px; text-align: justify; }
+        
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+        }
+        
+        th {
+            background: #1e3a8a;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        tr:nth-child(even) { background: #f8fafc; }
+        tr:hover { background: #eff6ff; }
+        
+        /* CODE */
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 9pt;
+            color: #7c3aed;
+        }
+        
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 9pt;
+            margin: 15px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        /* LISTS */
+        ul, ol {
+            margin: 10px 0 15px 25px;
+        }
+        
+        li { margin-bottom: 8px; }
+        
+        /* CALLOUTS */
+        .callout {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .callout-info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .callout-warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .callout-success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        
+        .callout-danger {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        /* FLOW DIAGRAM */
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .flow-box {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            margin: 5px;
+        }
+        
+        .flow-arrow {
+            font-size: 24px;
+            color: #94a3b8;
+            margin: 0 10px;
+        }
+        
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .stat-card.orange {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-number {
+            font-size: 28pt;
+            font-weight: 800;
+        }
+        
+        .stat-label {
+            font-size: 10pt;
+            opacity: 0.9;
+        }
+        
+        /* FOOTER */
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            font-size: 9pt;
+            color: #64748b;
+        }
+        
+        /* PAGE NUMBER */
+        .page-num {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 10pt;
+            color: #94a3b8;
+        }
+        
+        @media print {
+            .page-num { display: none; }
+        }
+        
+        /* CHART BOX */
+        .chart-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        /* STEP INDICATOR */
+        .steps {
+            counter-reset: step;
+        }
+        
+        .step {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 30px;
+        }
+        
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 35px;
+            height: 35px;
+            background: #1e3a8a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        
+        /* CHECKLIST */
+        .checklist {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .checklist li {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .checklist li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover">
+    <div class="cover-logo">💰</div>
+    <h1>PAYROLL SYSTEM V2</h1>
+    <h2>Sistem Penggajian Karyawan Super Lengkap</h2>
+    <div class="cover-divider"></div>
+    <div class="cover-info">
+        <p><strong>Versi:</strong> 2.0 Super Lengkap</p>
+        <p><strong>Arsitektur:</strong> One Page Coding</p>
+        <p><strong>Teknologi:</strong> PHP Native + MySQL + Tailwind CSS</p>
+        <p><strong>Author:</strong> PT. Maju Bersama</p>
+        <p style="margin-top: 20px; opacity: 0.7;">Dokumentasi Lengkap v1.0</p>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== DAFTAR ISI ==================== -->
+<div class="container">
+    <h1>📑 Daftar Isi</h1>
+    
+    <div style="columns: 2; column-gap: 40px;">
+        <h2 style="margin-top: 0;">1. Pendahuluan</h2>
+        <ul style="margin-bottom: 20px;">
+            <li><a href="#tentang">1.1 Tentang Aplikasi</a></li>
+            <li><a href="#fitur">1.2 Fitur Utama</a></li>
+            <li><a href="#requirement">1.3 Requirements</a></li>
+        </ul>
+        
+        <h2>2. Instalasi</h2>
+        <ul style="margin-bottom: 20px;">
+            <li><a href="#instal-auto">2.1 Instalasi Otomatis</a></li>
+            <li><a href="#instal-manual">2.2 Instalasi Manual</a></li>
+            <li><a href="#konfigurasi">2.3 Konfigurasi</a></li>
+        </ul>
+        
+        <h2>3. Panduan Penggunaan</h2>
+        <ul style="margin-bottom: 20px;">
+            <li><a href="#dashboard">3.1 Dashboard</a></li>
+            <li><a href="#departemen">3.2 Manajemen Departemen</a></li>
+            <li><a href="#karyawan">3.3 Manajemen Karyawan</a></li>
+            <li><a href="#kehadiran">3.4 Input Kehadiran</a></li>
+            <li><a href="#pengaturan">3.5 Pengaturan</a></li>
+            <li><a href="#payroll">3.6 Proses Gaji</a></li>
+            <li><a href="#laporan">3.7 Laporan</a></li>
+        </ul>
+        
+        <h2>4. Spesifikasi Database</h2>
+        <ul style="margin-bottom: 20px;">
+            <li><a href="#tabel">4.1 Struktur Tabel</a></li>
+            <li><a href="#relasi">4.2 Diagram Relasi</a></li>
+        </ul>
+        
+        <h2>5. Kalkulasi Gaji</h2>
+        <ul style="margin-bottom: 20px;">
+            <li><a href="#tunjangan">5.1 Komponen Tunjangan</a></li>
+            <li><a href="#potongan">5.2 Komponen Potongan</a></li>
+            <li><a href="#formula">5.3 Formula Perhitungan</a></li>
+        </ul>
+        
+        <h2>6. API Reference</h2>
+        <h2>7. Troubleshooting</h2>
+        <h2>8. Lisensi</h2>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 1: PENDAHULUAN ==================== -->
+<div class="container">
+    <h1 id="tentang">1. Pendahuluan</h1>
+    
+    <h2>1.1 Tentang Aplikasi</h2>
+    <p>
+        <strong>Payroll System V2</strong> adalah aplikasi penggajian karyawan lengkap yang dikembangkan 
+        dengan arsitektur <strong>One Page Coding</strong>. Semua logika backend, frontend, dan database 
+        dimuat dalam satu file PHP yang mudah di-deploy dan dikelola.
+    </p>
+    
+    <div class="callout callout-info">
+        <strong>💡 Keunggulan One Page Coding:</strong><br>
+        • Deployment sederhana - hanya upload 1 file<br>
+        • Maintenance mudah - semua dalam satu tempat<br>
+        • Tidak perlu routing atau framework kompleks<br>
+        • Cocok untuk UMKM hingga enterprise menengah
+    </div>
+    
+    <h2>1.2 Fitur Utama</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">7</div>
+            <div class="stat-label">Modul Utama</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-number">15+</div>
+            <div class="stat-label">Komponen Gaji</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Responsive UI</div>
+        </div>
+    </div>
+    
+    <table>
+        <tr><th>Modul</th><th>Deskripsi</th></tr>
+        <tr><td><strong>Dashboard</strong></td><td>Statistik real-time dengan grafik interaktif</td></tr>
+        <tr><td><strong>Departemen</strong></td><td>CRUD departemen perusahaan</td></tr>
+        <tr><td><strong>Karyawan</strong></td><td>Manajemen data karyawan lengkap</td></tr>
+        <tr><td><strong>Kehadiran</strong></td><td>Input & tracking kehadiran bulk</td></tr>
+        <tr><td><strong>Pengaturan</strong></td><td>Konfigurasi parameter payroll</td></tr>
+        <tr><td><strong>Proses Gaji</strong></td><td>Kalkulasi otomatis per individu/bulk</td></tr>
+        <tr><td><strong>Laporan</strong></td><td>Ringkasan & slip gaji</td></tr>
+    </table>
+    
+    <h2 id="requirement">1.3 Requirements Sistem</h2>
+    
+    <table>
+        <tr><th>Komponen</th><th>Minimum</th><th>Recommended</th></tr>
+        <tr><td>PHP Version</td><td>7.4</td><td>8.0+</td></tr>
+        <tr><td>MySQL Version</td><td>5.7</td><td>8.0+</td></tr>
+        <tr><td>Web Server</td><td>Apache/Nginx</td><td>Apache 2.4+</td></tr>
+        <tr><td>RAM</td><td>512 MB</td><td>2 GB</td></tr>
+        <tr><td>Disk Space</td><td>100 MB</td><td>500 MB</td></tr>
+    </table>
+    
+    <div class="callout callout-warning">
+        <strong>⚠️ Ekstensi PHP Required:</strong> mysqli, mbstring, json, gd (optional)
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 2: INSTALASI ==================== -->
+<div class="container">
+    <h1 id="instal-auto">2. Instalasi</h1>
+    
+    <h2>2.1 Instalasi Otomatis (Recommended)</h2>
+    <p>Ikuti langkah-langkah berikut untuk instalasi dengan wizard:</p>
+    
+    <div class="steps">
+        <div class="step">
+            <h3>Download & Extract</h3>
+            <p>Download repository atau clone dengan git, kemudian extract ke folder web server.</p>
+            <pre><code>git clone https://github.com/antono4/payrollphp.git
+# Atau download ZIP dan extract</code></pre>
+        </div>
+        
+        <div class="step">
+            <h3>Buka Installer di Browser</h3>
+            <p>Akses file installer melalui browser:</p>
+            <pre><code>http://localhost/payroll-app/installer.php</code></pre>
+        </div>
+        
+        <div class="step">
+            <h3>Isi Konfigurasi Database</h3>
+            <p>Masukkan informasi koneksi MySQL:</p>
+            <table>
+                <tr><th>Field</th><th>Default</th><th>Deskripsi</th></tr>
+                <tr><td>MySQL Host</td><td>localhost</td><td>Hostname MySQL server</td></tr>
+                <tr><td>Username</td><td>root</td><td>Username MySQL</td></tr>
+                <tr><td>Password</td><td>(kosong)</td><td>Password MySQL</td></tr>
+                <tr><td>Database Name</td><td>db_payroll_v2</td><td>Nama database baru</td></tr>
+            </table>
+        </div>
+        
+        <div class="step">
+            <h3>Klik "Install Sekarang"</h3>
+            <p>Sistem akan otomatis:</p>
+            <ul class="checklist">
+                <li>Membuat database baru</li>
+                <li>Membuat semua tabel yang diperlukan</li>
+                <li>Menginsert sample data</li>
+                <li>Mengupdate konfigurasi di index.php</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Akses Aplikasi</h3>
+            <p>Setelah instalasi selesai, buka aplikasi utama:</p>
+            <pre><code>http://localhost/payroll-app/index.php</code></pre>
+        </div>
+    </div>
+    
+    <div class="callout callout-success">
+        <strong>✅ Tips Keamanan:</strong> Setelah instalasi berhasil, <strong>hapus file installer.php</strong> 
+        untuk mencegah akses tidak sah ke konfigurasi database.
+    </div>
+    
+    <h2 id="instal-manual">2.2 Instalasi Manual</h2>
+    <p>Jika lebih prefer instalasi manual:</p>
+    
+    <h3>Step 1: Buat Database</h3>
+    <pre><code>mysql -u root -p -e "CREATE DATABASE db_payroll_v2 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"</code></pre>
+    
+    <h3>Step 2: Import SQL</h3>
+    <pre><code>mysql -u root -p db_payroll_v2 < database.sql</code></pre>
+    
+    <h3>Step 3: Edit Konfigurasi</h3>
+    <p>Buka file <code>index.php</code> dan ubah bagian konfigurasi:</p>
+    <pre><code>// Konfigurasi Database
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', 'password_anda');
+define('DB_NAME', 'db_payroll_v2');</code></pre>
+    
+    <h2 id="konfigurasi">2.3 Konfigurasi Server</h2>
+    
+    <h3>PHP Built-in Server (Development)</h3>
+    <pre><code>cd /path/to/payroll-app
+php -S localhost:8000
+# Buka: http://localhost:8000/index.php</code></pre>
+    
+    <h3>Apache (XAMPP/WAMP)</h3>
+    <pre><code># Copy folder ke htdocs (XAMPP) atau www (WAMP)
+# Windows: C:\xampp\htdocs\payroll-app
+# Linux: /opt/lampp/htdocs/payroll-app</code></pre>
+    
+    <h3>Nginx</h3>
+    <pre><code># Tambahkan virtual host di nginx.conf:
+server {
+    listen 80;
+    server_name payroll.local;
+    root /var/www/payroll-app;
+    index index.php;
+    
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}</code></pre>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 3: PENGGUNAAN ==================== -->
+<div class="container">
+    <h1 id="dashboard">3. Panduan Penggunaan</h1>
+    
+    <h2>3.1 Dashboard</h2>
+    <p>
+        Dashboard menyediakan gambaran menyeluruh tentang kondisi payroll perusahaan dengan 
+        statistik real-time dan visualisasi data.
+    </p>
+    
+    <div class="chart-box">
+        <h3 style="margin-top:0;">📊 Statistik yang Tersedia</h3>
+        <table>
+            <tr><th>Statistik</th><th>Deskripsi</th></tr>
+            <tr><td>Total Karyawan</td><td>Jumlah karyawan dengan status Aktif</td></tr>
+            <tr><td>Total Gaji Bulan Ini</td><td>Jumlah seluruh gaji yang sudah diproses bulan berjalan</td></tr>
+            <tr><td>Total Kehadiran</td><td>Total hari kehadiran seluruh karyawan bulan ini</td></tr>
+            <tr><td>Karyawan Baru</td><td>Karyawan yang masuk pada bulan berjalan</td></tr>
+        </table>
+    </div>
+    
+    <h2 id="departemen">3.2 Manajemen Departemen</h2>
+    <p>Kelola struktur organisasi dengan CRUD departemen:</p>
+    
+    <ul class="checklist">
+        <li><strong>Tambah:</strong> Klik tombol "Tambah" → Isi form</li>
+        <li><strong>Edit:</strong> Klik icon edit → Modify data → Simpan</li>
+        <li><strong>Hapus:</strong> Klik icon hapus → Konfirmasi</li>
+    </ul>
+    
+    <table>
+        <tr><th>Field</th><th>Wajib</th><th>Max</th></tr>
+        <tr><td>Kode Dept</td><td>✓</td><td>20 karakter</td></tr>
+        <tr><td>Nama Dept</td><td>✓</td><td>100 karakter</td></tr>
+        <tr><td>Keterangan</td><td>-</td><td>Text</td></tr>
+    </table>
+    
+    <h2 id="karyawan">3.3 Manajemen Karyawan</h2>
+    <p>Data karyawan lengkap dengan filter dan pencarian:</p>
+    
+    <table>
+        <tr><th>Field</th><th>Wajib</th><th>Deskripsi</th></tr>
+        <tr><td>NIK</td><td>✓</td><td>Nomor Induk Karyawan (unik)</td></tr>
+        <tr><td>Nama</td><td>✓</td><td>Nama lengkap</td></tr>
+        <tr><td>Email</td><td>-</td><td>Email aktif</td></tr>
+        <tr><td>No. HP</td><td>-</td><td>Nomor telepon</td></tr>
+        <tr><td>Alamat</td><td>-</td><td>Alamat lengkap</td></tr>
+        <tr><td>Departemen</td><td>-</td><td>Unit kerja</td></tr>
+        <tr><td>Jabatan</td><td>✓</td><td>Posisi/Jabatan</td></tr>
+        <tr><td>Status</td><td>✓</td><td>Aktif/Non-Aktif/Resign/PHK</td></tr>
+        <tr><td>Tanggal Masuk</td><td>✓</td><td>Tanggal mulai kerja</td></tr>
+        <tr><td>Gaji Pokok</td><td>✓</td><td>Besaran gaji dasar</td></tr>
+        <tr><td>Info Bank</td><td>-</td><td>No. Rek, Atas Nama, Bank</td></tr>
+    </table>
+    
+    <h3>Filter & Pencarian</h3>
+    <ul>
+        <li><strong>Filter Departemen:</strong> Dropdown untuk melihat karyawan per dept</li>
+        <li><strong>Pencarian:</strong> Ketik NIK atau nama untuk cari cepat</li>
+        <li><strong>Kombinasi:</strong> Filter dan pencarian bisa digabung</li>
+    </ul>
+    
+    <h2 id="kehadiran">3.4 Input Kehadiran</h2>
+    <p>Sistem kehadiran mendukung input bulk untuk efisiensi:</p>
+    
+    <div class="flow">
+        <div class="flow-box">Pilih<br>Periode</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Tampilkan<br>Karyawan</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Input<br>Kehadiran</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Simpan<br>Semua</div>
+    </div>
+    
+    <table>
+        <tr><th>Komponen</th><th>Deskripsi</th></tr>
+        <tr><td>Hadir</td><td>Jumlah hari kerja normal hadir</td></tr>
+        <tr><td>Sakit</td><td>Jumlah hari sakit (dengan surat dokter)</td></tr>
+        <tr><td>Izin</td><td>Jumlah hari izin (disetujui)</td></tr>
+        <tr><td>Alpa</td><td>Jumlah hari tidak hadir tanpa izin</td></tr>
+        <tr><td>Lembur</td><td>Total jam lembur</td></tr>
+    </table>
+    
+    <div class="callout callout-info">
+        <strong>💡 Tips:</strong> Data kehadiran yang sudah ada akan otomatis ter-load saat memilih periode.
+    </div>
+    
+    <h2 id="pengaturan">3.5 Pengaturan Payroll</h2>
+    <p>Konfigurasi parameter kalkulasi gaji:</p>
+    
+    <table>
+        <tr><th>Parameter</th><th>Default</th><th>Deskripsi</th></tr>
+        <tr><td>UMR/UMK</td><td>Rp 5.000.000</td><td>Upah minimum regional</td></tr>
+        <tr><td>Tunjangan Transport</td><td>Rp 500.000</td><td>Per bulan</td></tr>
+        <tr><td>Tunjangan Makan</td><td>Rp 30.000</td><td>Per hari hadir</td></tr>
+        <tr><td>Tunjangan Kesehatan</td><td>Rp 200.000</td><td>Per bulan</td></tr>
+        <tr><td>Bonus Lembur</td><td>Rp 25.000</td><td>Per jam lembur</td></tr>
+        <tr><td>Denda Alpa</td><td>Rp 100.000</td><td>Per hari alpa</td></tr>
+        <tr><td>Denda Terlambat</td><td>Rp 25.000</td><td>Per kejadian</td></tr>
+        <tr><td>Lembur Libur</td><td>Rp 150.000</td><td>Per hari libur kerja</td></tr>
+    </table>
+    
+    <h2 id="payroll">3.6 Proses Gaji</h2>
+    <p>Kalkulasi otomatis dengan dua mode:</p>
+    
+    <h3>Proses Individual</h3>
+    <ol>
+        <li>Pilih periode (bulan/tahun)</li>
+        <li>Klik tombol "Proses" pada karyawan yang diinginkan</li>
+        <li>Sistem akan menghitung dan menyimpan hasil</li>
+    </ol>
+    
+    <h3>Proses Bulk (Semua)</h3>
+    <ol>
+        <li>Pilih periode</li>
+        <li>Klik tombol "Proses Semua"</li>
+        <li>Konfirmasi aksi</li>
+        <li>Sistem memproses seluruh karyawan aktif</li>
+    </ol>
+    
+    <div class="callout callout-warning">
+        <strong>⚠️ Catatan:</strong> Pastikan data kehadiran sudah diinput sebelum memproses payroll!
+    </div>
+    
+    <h2 id="laporan">3.7 Laporan & Slip Gaji</h2>
+    <p>Tiga jenis laporan tersedia:</p>
+    
+    <h3>A. Rekap Bulanan</h3>
+    <p>Filter berdasarkan periode dan departemen, menampilkan:</p>
+    <ul>
+        <li> Daftar karyawan dengan detail gaji</li>
+        <li> Total per komponen</li>
+        <li> Ringkasan keseluruhan</li>
+    </ul>
+    
+    <h3>B. Slip Gaji Individual</h3>
+    <p>Detail lengkap per karyawan:</p>
+    <ul>
+        <li> Data karyawan & kehadiran</li>
+        <li> Semua komponen tunjangan</li>
+        <li> Semua komponen potongan</li>
+        <li> Gaji bersih final</li>
+    </ul>
+    
+    <h3>C. Print Slip</h3>
+    <p>Fungsi <code>window.print()</code> untuk cetak langsung:</p>
+    <pre><code>// Tombol cetak ada di modal slip gaji
+// Print hanya area slip (navbar/tab disembunyikan)</code></pre>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 4: DATABASE ==================== -->
+<div class="container">
+    <h1 id="tabel">4. Spesifikasi Database</h1>
+    
+    <h2>4.1 Struktur Tabel</h2>
+    
+    <h3>Tabel: departemen</h3>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Constraint</th><th>Deskripsi</th></tr>
+        <tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>ID unik</td></tr>
+        <tr><td>kode</td><td>VARCHAR(20)</td><td>NOT NULL</td><td>Kode departemen</td></tr>
+        <tr><td>nama_dept</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>Nama lengkap</td></tr>
+        <tr><td>keterangan</td><td>TEXT</td><td>-</td><td>Deskripsi</td></tr>
+        <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>Tanggal dibuat</td></tr>
+    </table>
+    
+    <h3>Tabel: karyawan</h3>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Constraint</th><th>Deskripsi</th></tr>
+        <tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>ID unik</td></tr>
+        <tr><td>nik</td><td>VARCHAR(20)</td><td>UNIQUE, NOT NULL</td><td>NIK karyawan</td></tr>
+        <tr><td>nama</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>Nama lengkap</td></tr>
+        <tr><td>email</td><td>VARCHAR(100)</td><td>-</td><td>Email</td></tr>
+        <tr><td>no_hp</td><td>VARCHAR(20)</td><td>-</td><td>No. HP</td></tr>
+        <tr><td>alamat</td><td>TEXT</td><td>-</td><td>Alamat lengkap</td></tr>
+        <tr><td>jabatan</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>Jabatan</td></tr>
+        <tr><td>id_departemen</td><td>INT</td><td>FK → departemen(id)</td><td>Ref. Departemen</td></tr>
+        <tr><td>status</td><td>ENUM</td><td>DEFAULT 'Aktif'</td><td>Status kerja</td></tr>
+        <tr><td>tgl_masuk</td><td>DATE</td><td>NOT NULL</td><td>Tanggal masuk</td></tr>
+        <tr><td>gaji_pokok</td><td>DECIMAL(12,2)</td><td>NOT NULL</td><td>Gaji dasar</td></tr>
+        <tr><td>no_rekening</td><td>VARCHAR(30)</td><td>-</td><td>No. Rekening</td></tr>
+        <tr><td>atas_nama</td><td>VARCHAR(100)</td><td>-</td><td>Nama rekening</td></tr>
+        <tr><td>bank</td><td>VARCHAR(50)</td><td>-</td><td>Nama bank</td></tr>
+    </table>
+    
+    <h3>Tabel: kehadiran</h3>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Constraint</th><th>Deskripsi</th></tr>
+        <tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>ID unik</td></tr>
+        <tr><td>id_karyawan</td><td>INT</td><td>FK → karyawan(id)</td><td>Ref. Karyawan</td></tr>
+        <tr><td>periode_bulan</td><td>INT</td><td>NOT NULL</td><td>Bulan (1-12)</td></tr>
+        <tr><td>periode_tahun</td><td>INT</td><td>NOT NULL</td><td>Tahun</td></tr>
+        <tr><td>hadir</td><td>INT</td><td>DEFAULT 0</td><td>Hari hadir</td></tr>
+        <tr><td>sakit</td><td>INT</td><td>DEFAULT 0</td><td>Hari sakit</td></tr>
+        <tr><td>izin</td><td>INT</td><td>DEFAULT 0</td><td>Hari izin</td></tr>
+        <tr><td>alpa</td><td>INT</td><td>DEFAULT 0</td><td>Hari alpa</td></tr>
+        <tr><td>lembur</td><td>INT</td><td>DEFAULT 0</td><td>Jam lembur</td></tr>
+        <tr><td>total_hari_kerja</td><td>INT</td><td>DEFAULT 0</td><td>Total hari</td></tr>
+    </table>
+    
+    <h3>Tabel: setting_payroll</h3>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Default</th><th>Deskripsi</th></tr>
+        <tr><td>id</td><td>INT</td><td>1</td><td>PK (single row)</td></tr>
+        <tr><td>umr</td><td>DECIMAL(10,2)</td><td>5000000</td><td>UMR daerah</td></tr>
+        <tr><td>tunjangan_transport</td><td>DECIMAL(10,2)</td><td>500000</td><td>Tunj. transport</td></tr>
+        <tr><td>tunjangan_makan</td><td>DECIMAL(10,2)</td><td>300000</td><td>Tunj. makan/hari</td></tr>
+        <tr><td>tunjangan_kesehatan</td><td>DECIMAL(10,2)</td><td>200000</td><td>Tunj. kesehatan</td></tr>
+        <tr><td>bonus_lembur_per_jam</td><td>DECIMAL(10,2)</td><td>25000</td><td>Lembur/jam</td></tr>
+        <tr><td>denda_alpa_per_hari</td><td>DECIMAL(10,2)</td><td>100000</td><td>Denda alpa/hari</td></tr>
+        <tr><td>denda_terlambat_per_kali</td><td>DECIMAL(10,2)</td><td>25000</td><td>Denda telat</td></tr>
+        <tr><td>pengganti_libur</td><td>DECIMAL(10,2)</td><td>150000</td><td>Lembur libur</td></tr>
+    </table>
+    
+    <h3>Tabel: penggajian</h3>
+    <p>Tabel utama dengan semua komponen perhitungan:</p>
+    <table>
+        <tr><th>Field</th><th>Type</th><th>Deskripsi</th></tr>
+        <tr><td colspan="3"><strong>Identitas</strong></td></tr>
+        <tr><td>id</td><td>INT PK</td><td>ID unik</td></tr>
+        <tr><td>id_karyawan</td><td>INT FK</td><td>Ref. Karyawan</td></tr>
+        <tr><td>periode_bulan/tahun</td><td>INT</td><td>Periode penggajian</td></tr>
+        <tr><td colspan="3"><strong>Kehadiran</strong></td></tr>
+        <tr><td>hadir, sakit, izin, alpa, lembur</td><td>INT</td><td>Data kehadiran</td></tr>
+        <tr><td colspan="3"><strong>Penghasilan</strong></td></tr>
+        <tr><td>gaji_pokok</td><td>DECIMAL</td><td>Gaji dasar</td></tr>
+        <tr><td>tunjangan_jabatan</td><td>DECIMAL</td><td>Tunj. berdasarkan jabatan</td></tr>
+        <tr><td>tunjangan_transport</td><td>DECIMAL</td><td>Tunj. transport</td></tr>
+        <tr><td>tunjangan_makan</td><td>DECIMAL</td><td>Tunj. makan</td></tr>
+        <tr><td>tunjangan_kesehatan</td><td>DECIMAL</td><td>Tunj. kesehatan</td></tr>
+        <tr><td>tunjangan_masa_kerja</td><td>DECIMAL</td><td>Tunj. berdasarkan masa kerja</td></tr>
+        <tr><td>bonus_kehadiran</td><td>DECIMAL</td><td>Bonus hadir full month</td></tr>
+        <tr><td>bonus_lembur</td><td>DECIMAL</td><td>Bonus lembur</td></tr>
+        <tr><td>total_penghasilan</td><td>DECIMAL</td><td>Total semua penghasilan</td></tr>
+        <tr><td colspan="3"><strong>Potongan</strong></td></tr>
+        <tr><td>potongan_alpa</td><td>DECIMAL</td><td>Potongan alpa</td></tr>
+        <tr><td>potongan_izin</td><td>DECIMAL</td><td>Potongan izin</td></tr>
+        <tr><td>potongan_bpjs_kesehatan</td><td>DECIMAL</td><td>BPJS Kesehatan 1%</td></tr>
+        <tr><td>potongan_bpjs_ketenagakerjaan</td><td>DECIMAL</td><td>BPJS Ketenagakerjaan 2%</td></tr>
+        <tr><td>potongan_pph21</td><td>DECIMAL</td><td>Pajak PPh 21</td></tr>
+        <tr><td>potongan_lainnya</td><td>DECIMAL</td><td>Potongan lain</td></tr>
+        <tr><td>total_potongan</td><td>DECIMAL</td><td>Total semua potongan</td></tr>
+        <tr><td colspan="3"><strong>Hasil</strong></td></tr>
+        <tr><td>gaji_bersih</td><td>DECIMAL</td><td>Gaji akhir (Total Penghasilan - Total Potongan)</td></tr>
+        <tr><td>status</td><td>ENUM</td><td>draft/process/paid</td></tr>
+    </table>
+    
+    <h2 id="relasi">4.2 Diagram Relasi</h2>
+    
+    <div class="chart-box" style="text-align: center;">
+        <pre style="background: none; color: #1e3a8a; text-align: center; font-size: 10pt;">
+┌─────────────┐       ┌─────────────┐
+│ DEPARTEMEN  │       │  KARYAWAN   │
+├─────────────┤       ├─────────────┤
+│ PK id       │──┐    │ PK id       │
+│ kode        │  │    │ FK id_dept ──┘
+│ nama_dept   │  │    │ nik (UNIQUE)│
+└─────────────┘  │    │ nama        │
+                │    │ ...         │
+                │    └──────┬──────┘
+                │           │
+                │     ┌─────┴─────┐
+                │     │           │
+                │     ▼           ▼
+                │ ┌────────┐ ┌──────────┐
+                └►│KEHADIR │ │PENGGAJIAN│
+                  ├────────┤ ├──────────┤
+                  │FK id_k│ │FK id_kary│
+                  │bulan  │ │bulan/tahun│
+                  │hadir  │ │gaji_pokok│
+                  │sakit  │ │tunjangan* │
+                  │izin   │ │potongan*  │
+                  │alpa   │ │gaji_bersih│
+                  │lembur │ └──────────┘
+                  └────────┘
+                  
+        ┌────────────────┐
+        │SETTING_PAYROLL │
+        ├────────────────┤
+        │ umr            │
+        │ tunjangan_*    │
+        │ bonus_*        │
+        │ denda_*        │
+        └────────────────┘
+        </pre>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 5: KALKULASI ==================== -->
+<div class="container">
+    <h1 id="tunjangan">5. Kalkulasi Gaji</h1>
+    
+    <h2>5.1 Komponen Tunjangan</h2>
+    
+    <table>
+        <tr><th>Komponen</th><th>Formula</th><th>Contoh (Gaji Rp 10jt)</th></tr>
+        <tr>
+            <td><strong>Tunjangan Jabatan</strong></td>
+            <td>Gaji Pokok × Persentase</td>
+            <td>Rp 10.000.000 × 15% = <strong>Rp 1.500.000</strong></td>
+        </tr>
+    </table>
+    
+    <table>
+        <tr><th>Jabatan</th><th>Persentase</th><th>Contoh (Rp 10jt)</th></tr>
+        <tr><td>Direksi</td><td>35%</td><td>Rp 3.500.000</td></tr>
+        <tr><td>General Manager</td><td>30%</td><td>Rp 3.000.000</td></tr>
+        <tr><td>Manager</td><td>25%</td><td>Rp 2.500.000</td></tr>
+        <tr><td>Assistant Manager</td><td>20%</td><td>Rp 2.000.000</td></tr>
+        <tr><td>Supervisor</td><td>15%</td><td>Rp 1.500.000</td></tr>
+        <tr><td>Senior Staff</td><td>10%</td><td>Rp 1.000.000</td></tr>
+        <tr><td>Staff</td><td>8%</td><td>Rp 800.000</td></tr>
+        <tr><td>Junior Staff</td><td>5%</td><td>Rp 500.000</td></tr>
+        <tr><td>Internship</td><td>0%</td><td>Rp 0</td></tr>
+    </table>
+    
+    <table>
+        <tr><th>Komponen</th><th>Formula</th><th>Contoh</th></tr>
+        <tr>
+            <td><strong>Tunjangan Transport</strong></td>
+            <td>固定 per bulan</td>
+            <td>Rp 500.000</td>
+        </tr>
+        <tr>
+            <td><strong>Tunjangan Makan</strong></td>
+            <td>Rate × Hari Hadir</td>
+            <td>Rp 30.000 × 24 = <strong>Rp 720.000</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Tunjangan Kesehatan</strong></td>
+            <td>固定 per bulan</td>
+            <td>Rp 200.000</td>
+        </tr>
+        <tr>
+            <td><strong>Tunjangan Masa Kerja</strong></td>
+            <td>2% × Gaji × (Masa Kerja ÷ 12)</td>
+            <td>Maks 10% dari gaji pokok</td>
+        </tr>
+        <tr>
+            <td><strong>Bonus Hadir</strong></td>
+            <td>5% × Gaji Pokok (jika hadir ≥ 24)</td>
+            <td>Rp 10.000.000 × 5% = <strong>Rp 500.000</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Bonus Lembur</strong></td>
+            <td>Rate/jam × Total Jam</td>
+            <td>Rp 25.000 × 16 = <strong>Rp 400.000</strong></td>
+        </tr>
+    </table>
+    
+    <h2 id="potongan">5.2 Komponen Potongan</h2>
+    
+    <table>
+        <tr><th>Komponen</th><th>Formula</th><th>Contoh</th></tr>
+        <tr>
+            <td><strong>Potongan Alpa</strong></td>
+            <td>Rate × Hari Alpa</td>
+            <td>Rp 100.000 × 2 = <strong>Rp 200.000</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Potongan Izin</strong></td>
+            <td>50% × Rate × (Izin - 2)</td>
+            <td>lebih dari 2 hari izin</td>
+        </tr>
+        <tr>
+            <td><strong>BPJS Kesehatan</strong></td>
+            <td>1% × Gaji Pokok</td>
+            <td>Rp 10.000.000 × 1% = <strong>Rp 100.000</strong></td>
+        </tr>
+        <tr>
+            <td><strong>BPJS Ketenagakerjaan</strong></td>
+            <td>2% × Gaji Pokok</td>
+            <td>Rp 10.000.000 × 2% = <strong>Rp 200.000</strong></td>
+        </tr>
+        <tr>
+            <td><strong>PPh 21</strong></td>
+            <td>Progressive (lihat tabel)</td>
+            <td>Berbeda per lapisan</td>
+        </tr>
+        <tr>
+            <td><strong>Simpanan Wajib</strong></td>
+            <td>1% × Gaji Pokok</td>
+            <td>Rp 10.000.000 × 1% = <strong>Rp 100.000</strong></td>
+        </tr>
+    </table>
+    
+    <h3>Tarif PPh 21 Progressive (PTKP TK/0)</h3>
+    <table>
+        <tr><th>Lapisan PKP/Tahun</th><th>Tarif</th><th>Contoh (PKP Rp 100jt)</th></tr>
+        <tr><td>0 - Rp 60.000.000</td><td>5%</td><td>Rp 60jt × 5% = Rp 3.000.000</td></tr>
+        <tr><td>Rp 60jt - Rp 250.000.000</td><td>15%</td><td>Rp 40jt × 15% = Rp 6.000.000</td></tr>
+        <tr><td>Rp 250jt - Rp 500.000.000</td><td>25%</td><td>-</td></tr>
+        <tr><td>> Rp 500.000.000</td><td>30%</td><td>-</td></tr>
+    </table>
+    
+    <div class="callout callout-info">
+        <strong>📌 Catatan PPh 21:</strong><br>
+        • PTKP untuk TK/0 = Rp 54.000.000/tahun<br>
+        • PKP = (Gaji + Tunjangan Jabatan) × 12 - PTKP<br>
+        • PPh 21 bulanan = PPh 21 tahunan ÷ 12
+    </div>
+    
+    <h2 id="formula">5.3 Formula Perhitungan</h2>
+    
+    <div class="chart-box">
+        <h3 style="margin-top:0;">📐 Gaji Bersih = Total Penghasilan - Total Potongan</h3>
+        
+        <pre style="background: none; color: #1e3a8a; margin: 20px 0;">
+<strong>TOTAL PENGHASILAN</strong>
+= Gaji Pokok
++ Tunjangan Jabatan
++ Tunjangan Transport
++ Tunjangan Makan
++ Tunjangan Kesehatan
++ Tunjangan Masa Kerja
++ Bonus Hadir
++ Bonus Lembur
+
+<strong>TOTAL POTONGAN</strong>
+= Potongan Alpa
++ Potongan Izin
++ BPJS Kesehatan (1%)
++ BPJS Ketenagakerjaan (2%)
++ PPh 21 (Progressive)
++ Simpanan Wajib (1%)
+
+<strong>GAJI BERSIH</strong>
+= Total Penghasilan - Total Potongan
+        </pre>
+    </div>
+    
+    <h3>Contoh Perhitungan Lengkap</h3>
+    <p><strong>Data Karyawan:</strong></p>
+    <ul>
+        <li>Gaji Pokok: Rp 10.000.000</li>
+        <li>Jabatan: Supervisor (15%)</li>
+        <li>Hadir: 24 hari, Izin: 1 hari, Alpa: 0, Lembur: 8 jam</li>
+    </ul>
+    
+    <p><strong>Perhitungan:</strong></p>
+    <pre><code><strong>PENGHASILAN:</strong>
+Gaji Pokok          = Rp 10.000.000
+Tunj. Jabatan      = Rp  1.500.000  (10jt × 15%)
+Tunj. Transport     = Rp    500.000
+Tunj. Makan        = Rp    720.000  (30rb × 24)
+Tunj. Kesehatan    = Rp    200.000
+Tunj. Masa Kerja   = Rp          0  (< 12 bulan)
+Bonus Hadir        = Rp    500.000  (5% × 10jt, hadir ≥ 24)
+Bonus Lembur       = Rp    200.000  (25rb × 8)
+                        ──────────────
+TOTAL PENGHASILAN  = Rp 13.620.000
+
+<strong>POTONGAN:</strong>
+BPJS Kesehatan     = Rp    100.000  (1%)
+BPJS TK            = Rp    200.000  (2%)
+PPh 21             = Rp    150.000  (estimasi)
+Simpanan Wajib     = Rp    100.000  (1%)
+                        ──────────────
+TOTAL POTONGAN     = Rp    550.000
+
+═══════════════════════════════════════
+GAJI BERSIH        = Rp 13.070.000
+═══════════════════════════════════════</code></pre>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 6: API ==================== -->
+<div class="container">
+    <h1>6. API Reference</h1>
+    
+    <p>Aplikasi menggunakan AJAX calls untuk komunikasi client-server. Semua request adalah POST dengan parameter <code>action</code>.</p>
+    
+    <h2>Daftar Actions</h2>
+    
+    <table>
+        <tr><th>Action</th><th>Parameter</th><th>Return</th></tr>
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">DEPARTEMEN</td></tr>
+        <tr><td>get_departemen</td><td>-</td><td>Array departemen</td></tr>
+        <tr><td>simpan_departemen</td><td>id, kode, nama, keterangan</td><td>Status</td></tr>
+        <tr><td>hapus_departemen</td><td>id</td><td>Status</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">KARYAWAN</td></tr>
+        <tr><td>get_karyawan</td><td>search, dept</td><td>Array karyawan</td></tr>
+        <tr><td>get_karyawan_by_id</td><td>id</td><td>Single karyawan</td></tr>
+        <tr><td>simpan_karyawan</td><td>Semua field karyawan</td><td>Status</td></tr>
+        <tr><td>hapus_karyawan</td><td>id</td><td>Status</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">STATISTIK</td></tr>
+        <tr><td>get_statistik</td><td>-</td><td>Object statistik</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">KEHADIRAN</td></tr>
+        <tr><td>get_template_kehadiran</td><td>periode_bulan, periode_tahun</td><td>Array template</td></tr>
+        <tr><td>bulk_simpan_kehadiran</td><td>data(JSON), periode_bulan, periode_tahun</td><td>Status</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">SETTING</td></tr>
+        <tr><td>get_setting_payroll</td><td>-</td><td>Object setting</td></tr>
+        <tr><td>simpan_setting_payroll</td><td>Semua field setting</td><td>Status</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">PAYROLL</td></tr>
+        <tr><td>proses_payroll</td><td>id_karyawan, periode_bulan, periode_tahun</td><td>Status + data</td></tr>
+        <tr><td>proses_semua_payroll</td><td>periode_bulan, periode_tahun</td><td>Status + count</td></tr>
+        
+        <tr><td colspan="3" style="background:#eff6ff;font-weight:600;">LAPORAN</td></tr>
+        <tr><td>get_penggajian</td><td>filter_bulan, filter_tahun, dept</td><td>Array penggajian</td></tr>
+        <tr><td>get_slip_gaji</td><td>id_karyawan, periode_bulan, periode_tahun</td><td>Slip lengkap</td></tr>
+    </table>
+    
+    <h2>Contoh Response</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Payroll berhasil diproses",
+  "data": {
+    "gaji_pokok": 15000000,
+    "total_penghasilan": 19500000,
+    "total_potongan": 2500000,
+    "gaji_bersih": 17000000
+  }
+}</code></pre>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== BAB 7: TROUBLESHOOTING ==================== -->
+<div class="container">
+    <h1>7. Troubleshooting</h1>
+    
+    <h2>Problem & Solutions</h2>
+    
+    <table>
+        <tr><th>Problem</th><th>Kemungkinan Penyebab</th><th>Solusi</th></tr>
+        <tr>
+            <td rowspan="2">"Koneksi gagal"</td>
+            <td>MySQL tidak berjalan</td>
+            <td>Start MySQL service</td>
+        </tr>
+        <tr>
+            <td>Username/password salah</td>
+            <td>Verifikasi kredensial di config</td>
+        </tr>
+        <tr>
+            <td rowspan="2">"Table doesn't exist"</td>
+            <td>Database belum dibuat</td>
+            <td>Jalankan installer atau import SQL</td>
+        </tr>
+        <tr>
+            <td>Nama database salah</td>
+            <td>Check DB_NAME di index.php</td>
+        </tr>
+        <tr>
+            <td>Halaman putih</td>
+            <td>PHP error</td>
+            <td>Enable error_reporting atau check error_log</td>
+        </tr>
+        <tr>
+            <td>Slip gaji tidak muncul</td>
+            <td>Payroll belum diproses</td>
+            <td>Proses payroll terlebih dahulu</td>
+        </tr>
+        <tr>
+            <td>Gaji bersih Rp 0</td>
+            <td>Data kehadiran belum ada</td>
+            <td>Input kehadiran sebelum proses</td>
+        </tr>
+    </table>
+    
+    <h2>Commands Useful</h2>
+    <pre><code># Check PHP version
+php -v
+
+# Check MySQL
+mysql --version
+mysql -u root -p -e "SHOW DATABASES;"
+
+# Check PHP modules
+php -m | grep -E "mysqli|mbstring"
+
+# Restart services
+# XAMPP
+sudo /opt/lampp/lampp restart
+
+# Ubuntu/Debian
+sudo systemctl restart mysql
+sudo systemctl restart apache2</code></pre>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ==================== LAMPIRAN ==================== -->
+<div class="container">
+    <h1>8. Lampiran</h1>
+    
+    <h2>Daftar Jabatan Default</h2>
+    <table>
+        <tr><th>No</th><th>Jabatan</th><th>Tunjangan %</th></tr>
+        <tr><td>1</td><td>Direksi</td><td>35%</td></tr>
+        <tr><td>2</td><td>General Manager</td><td>30%</td></tr>
+        <tr><td>3</td><td>Manager</td><td>25%</td></tr>
+        <tr><td>4</td><td>Assistant Manager</td><td>20%</td></tr>
+        <tr><td>5</td><td>Supervisor</td><td>15%</td></tr>
+        <tr><td>6</td><td>Senior Staff</td><td>10%</td></tr>
+        <tr><td>7</td><td>Staff</td><td>8%</td></tr>
+        <tr><td>8</td><td>Junior Staff</td><td>5%</td></tr>
+        <tr><td>9</td><td>Internship</td><td>0%</td></tr>
+    </table>
+    
+    <h2>Changelog</h2>
+    <table>
+        <tr><th>Versi</th><th>Tanggal</th><th>Deskripsi</th></tr>
+        <tr><td>2.0</td><td>2024</td><td>Super Lengkap - Semua fitur baru</td></tr>
+        <tr><td>1.0</td><td>2024</td><td>Rilis awal</td></tr>
+    </table>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<div class="container">
+    <div class="footer">
+        <p><strong>Payroll System V2 - Dokumentasi Lengkap</strong></p>
+        <p>© 2024 PT. Maju Bersama | MIT License</p>
+        <p>Dokumen ini dibuat otomatis dari source code</p>
+    </div>
+</div>
+
+<div class="page-num">Halaman <span class="page"></span></div>
+
+<script>
+// Simple page numbering for print
+document.addEventListener('DOMContentLoaded', function() {
+    if (!window.print) return;
+    
+    const pages = document.querySelectorAll('.container, .cover');
+    let pageNum = 1;
+    
+    pages.forEach((page, index) => {
+        if (index > 0) { // Skip cover
+            const numSpan = document.createElement('span');
+            numSpan.className = 'page';
+            numSpan.textContent = pageNum++;
+            
+            const footer = page.querySelector('.footer');
+            if (footer) {
+                footer.innerHTML += `<p style="margin-top:10px;">Halaman ${pageNum - 1}</p>`;
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
