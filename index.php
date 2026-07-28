@@ -103,6 +103,13 @@ if (isset($_POST['action'])) {
                 break;
             }
             
+            // Check if users table exists
+            $table_check = $conn->query("SHOW TABLES LIKE 'users'");
+            if ($table_check->num_rows === 0) {
+                $response = ['status' => 'error', 'message' => 'Sistem belum diinisialisasi. Jalankan installer.php terlebih dahulu.'];
+                break;
+            }
+            
             $stmt = $conn->prepare("SELECT u.*, d.nama_dept FROM users u LEFT JOIN departemen d ON u.id_departemen=d.id WHERE u.username=? AND u.status='aktif'");
             $stmt->bind_param("s", $username);
             $stmt->execute();
@@ -149,6 +156,11 @@ if (isset($_POST['action'])) {
                 $response = ['status' => 'error', 'message' => 'Akses ditolak'];
                 break;
             }
+            $table_check = $conn->query("SHOW TABLES LIKE 'users'");
+            if ($table_check->num_rows === 0) {
+                $response = ['status' => 'success', 'data' => []];
+                break;
+            }
             $result = $conn->query("SELECT u.id, u.username, u.nama_lengkap, u.email, u.level, u.status, u.last_login, d.nama_dept FROM users u LEFT JOIN departemen d ON u.id_departemen=d.id ORDER BY u.id DESC");
             $response = ['status' => 'success', 'data' => $result->fetch_all(MYSQLI_ASSOC)];
             break;
@@ -156,6 +168,11 @@ if (isset($_POST['action'])) {
         case 'simpan_user':
             if (!hasPermission('users')) {
                 $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $table_check = $conn->query("SHOW TABLES LIKE 'users'");
+            if ($table_check->num_rows === 0) {
+                $response = ['status' => 'error', 'message' => 'Tabel users tidak ditemukan'];
                 break;
             }
             $id = !empty($_POST['id']) ? intval($_POST['id']) : null;
@@ -199,6 +216,11 @@ if (isset($_POST['action'])) {
                 $response = ['status' => 'error', 'message' => 'Akses ditolak'];
                 break;
             }
+            $table_check = $conn->query("SHOW TABLES LIKE 'users'");
+            if ($table_check->num_rows === 0) {
+                $response = ['status' => 'error', 'message' => 'Tabel users tidak ditemukan'];
+                break;
+            }
             $id = intval($_POST['id']);
             if ($id == $_SESSION['user_id']) {
                 $response = ['status' => 'error', 'message' => 'Tidak dapat menghapus akun sendiri'];
@@ -213,6 +235,11 @@ if (isset($_POST['action'])) {
         case 'get_user_by_id':
             if (!hasPermission('users')) {
                 $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $table_check = $conn->query("SHOW TABLES LIKE 'users'");
+            if ($table_check->num_rows === 0) {
+                $response = ['status' => 'error', 'message' => 'Tabel users tidak ditemukan'];
                 break;
             }
             $stmt = $conn->prepare("SELECT id, username, nama_lengkap, email, level, status, id_departemen FROM users WHERE id=?");
