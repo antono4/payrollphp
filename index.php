@@ -56,9 +56,22 @@ if (isset($_POST['action'])) {
             break;
         case 'simpan_departemen':
             $id = !empty($_POST['id']) ? intval($_POST['id']) : null;
-            $stmt = $conn->prepare($id ? "UPDATE departemen SET nama_dept=?, kode=?, keterangan=? WHERE id=?" : "INSERT INTO departemen (nama_dept, kode, keterangan) VALUES (?, ?, ?)");
-            $stmt->bind_param("sssi" . ($id ? "i" : ""), $_POST['nama'], $_POST['kode'], $_POST['keterangan'], $id);
-            if (!$id) $stmt->bind_param("sss", $_POST['nama'], $_POST['kode'], $_POST['keterangan']);
+            $nama = trim($_POST['nama']);
+            $kode = trim($_POST['kode']);
+            $keterangan = trim($_POST['keterangan']);
+            
+            if (empty($nama) || empty($kode)) {
+                $response = ['status' => 'error', 'message' => 'Nama dan kode departemen harus diisi'];
+                break;
+            }
+            
+            if ($id) {
+                $stmt = $conn->prepare("UPDATE departemen SET nama_dept=?, kode=?, keterangan=? WHERE id=?");
+                $stmt->bind_param("sssi", $nama, $kode, $keterangan, $id);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO departemen (nama_dept, kode, keterangan) VALUES (?, ?, ?)");
+                $stmt->bind_param("sss", $nama, $kode, $keterangan);
+            }
             $response = $stmt->execute() ? ['status' => 'success', 'message' => 'Berhasil disimpan'] : ['status' => 'error', 'message' => 'Gagal'];
             $stmt->close();
             break;
@@ -71,11 +84,19 @@ if (isset($_POST['action'])) {
         
         // KARYAWAN
         case 'get_karyawan':
-            $search = isset($_POST['search']) ? $conn->real_escape_string($_POST['search']) : '';
+            $search = isset($_POST['search']) ? '%' . $conn->real_escape_string($_POST['search']) . '%' : '%';
             $dept = !empty($_POST['dept']) ? intval($_POST['dept']) : 0;
-            $where = "WHERE (k.nama LIKE '%$search%' OR k.nik LIKE '%$search%')" . ($dept ? " AND k.id_departemen=$dept" : "");
-            $result = $conn->query("SELECT k.*, d.nama_dept FROM karyawan k LEFT JOIN departemen d ON k.id_departemen=d.id $where ORDER BY k.id DESC");
-            $response = ['status' => 'success', 'data' => $result->fetch_all(MYSQLI_ASSOC)];
+            
+            if ($dept > 0) {
+                $stmt = $conn->prepare("SELECT k.*, d.nama_dept FROM karyawan k LEFT JOIN departemen d ON k.id_departemen=d.id WHERE (k.nama LIKE ? OR k.nik LIKE ?) AND k.id_departemen=? ORDER BY k.id DESC");
+                $stmt->bind_param("ssi", $search, $search, $dept);
+            } else {
+                $stmt = $conn->prepare("SELECT k.*, d.nama_dept FROM karyawan k LEFT JOIN departemen d ON k.id_departemen=d.id WHERE k.nama LIKE ? OR k.nik LIKE ? ORDER BY k.id DESC");
+                $stmt->bind_param("ss", $search, $search);
+            }
+            $stmt->execute();
+            $response = ['status' => 'success', 'data' => $stmt->get_result()->fetch_all(MYSQLI_ASSOC)];
+            $stmt->close();
             break;
         case 'get_karyawan_by_id':
             $stmt = $conn->prepare("SELECT k.*, d.nama_dept FROM karyawan k LEFT JOIN departemen d ON k.id_departemen=d.id WHERE k.id=?");
@@ -86,11 +107,33 @@ if (isset($_POST['action'])) {
             break;
         case 'simpan_karyawan':
             $id = !empty($_POST['id']) ? intval($_POST['id']) : null;
-            $f = ['nik'=>$_POST['nik'], 'nama'=>$_POST['nama'], 'email'=>$_POST['email'], 'no_hp'=>$_POST['no_hp'], 'alamat'=>$_POST['alamat'], 'jabatan'=>$_POST['jabatan'], 'id_departemen'=>$_POST['id_departemen'], 'status'=>$_POST['status'], 'tgl_masuk'=>$_POST['tgl_masuk'], 'gaji_pokok'=>floatval($_POST['gaji_pokok']), 'no_rekening'=>$_POST['no_rekening'], 'atas_nama'=>$_POST['atas_nama'], 'bank'=>$_POST['bank']];
-            $sql = $id ? "UPDATE karyawan SET nik=?, nama=?, email=?, no_hp=?, alamat=?, jabatan=?, id_departemen=?, status=?, tgl_masuk=?, gaji_pokok=?, no_rekening=?, atas_nama=?, bank=? WHERE id=?" : "INSERT INTO karyawan (nik, nama, email, no_hp, alamat, jabatan, id_departemen, status, tgl_masuk, gaji_pokok, no_rekening, atas_nama, bank) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            $stmt = $conn->prepare($sql);
-            if ($id) $stmt->bind_param("sssssssississi", $f['nik'], $f['nama'], $f['email'], $f['no_hp'], $f['alamat'], $f['jabatan'], $f['id_departemen'], $f['status'], $f['tgl_masuk'], $f['gaji_pokok'], $f['no_rekening'], $f['atas_nama'], $f['bank'], $id);
-            else $stmt->bind_param("sssssssississ", $f['nik'], $f['nama'], $f['email'], $f['no_hp'], $f['alamat'], $f['jabatan'], $f['id_departemen'], $f['status'], $f['tgl_masuk'], $f['gaji_pokok'], $f['no_rekening'], $f['atas_nama'], $f['bank']);
+            $nik = trim($_POST['nik']);
+            $nama = trim($_POST['nama']);
+            $jabatan = trim($_POST['jabatan']);
+            $tgl_masuk = trim($_POST['tgl_masuk']);
+            $gaji_pokok = floatval($_POST['gaji_pokok']);
+            
+            if (empty($nik) || empty($nama) || empty($jabatan) || empty($tgl_masuk) || $gaji_pokok <= 0) {
+                $response = ['status' => 'error', 'message' => 'NIK, Nama, Jabatan, Tanggal Masuk, dan Gaji Pokok harus diisi dengan benar'];
+                break;
+            }
+            
+            $email = trim($_POST['email'] ?? '');
+            $no_hp = trim($_POST['no_hp'] ?? '');
+            $alamat = trim($_POST['alamat'] ?? '');
+            $id_departemen = intval($_POST['id_departemen']) ?: null;
+            $status = trim($_POST['status'] ?? 'Aktif');
+            $no_rekening = trim($_POST['no_rekening'] ?? '');
+            $atas_nama = trim($_POST['atas_nama'] ?? '');
+            $bank = trim($_POST['bank'] ?? '');
+            
+            if ($id) {
+                $stmt = $conn->prepare("UPDATE karyawan SET nik=?, nama=?, email=?, no_hp=?, alamat=?, jabatan=?, id_departemen=?, status=?, tgl_masuk=?, gaji_pokok=?, no_rekening=?, atas_nama=?, bank=? WHERE id=?");
+                $stmt->bind_param("sssssssississi", $nik, $nama, $email, $no_hp, $alamat, $jabatan, $id_departemen, $status, $tgl_masuk, $gaji_pokok, $no_rekening, $atas_nama, $bank, $id);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO karyawan (nik, nama, email, no_hp, alamat, jabatan, id_departemen, status, tgl_masuk, gaji_pokok, no_rekening, atas_nama, bank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("sssssssississ", $nik, $nama, $email, $no_hp, $alamat, $jabatan, $id_departemen, $status, $tgl_masuk, $gaji_pokok, $no_rekening, $atas_nama, $bank);
+            }
             $response = $stmt->execute() ? ['status' => 'success', 'message' => 'Berhasil disimpan'] : ['status' => 'error', 'message' => 'Gagal'];
             $stmt->close();
             break;
@@ -139,15 +182,27 @@ if (isset($_POST['action'])) {
             break;
         case 'bulk_simpan_kehadiran':
             $data = json_decode($_POST['data'], true);
+            if (!$data || !is_array($data)) {
+                $response = ['status' => 'error', 'message' => 'Data tidak valid'];
+                break;
+            }
             $bln = intval($_POST['periode_bulan']); $thn = intval($_POST['periode_tahun']);
+            $saved = 0;
             foreach ($data as $item) {
                 $stmt = $conn->prepare("INSERT INTO kehadiran (id_karyawan, periode_bulan, periode_tahun, hadir, sakit, izin, alpa, lembur, total_hari_kerja) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE hadir=?, sakit=?, izin=?, alpa=?, lembur=?, total_hari_kerja=?");
-                $hadir=intval($item['hadir']); $sakit=intval($item['sakit']); $izin=intval($item['izin']); $alpa=intval($item['alpa']); $lembur=intval($item['lembur']);
+                $id_karyawan = intval($item['id_karyawan']);
+                if ($id_karyawan <= 0) continue;
+                $hadir = max(0, min(31, intval($item['hadir'])));
+                $sakit = max(0, min(31, intval($item['sakit'])));
+                $izin = max(0, min(31, intval($item['izin'])));
+                $alpa = max(0, min(31, intval($item['alpa'])));
+                $lembur = max(0, min(200, intval($item['lembur'])));
                 $total = $hadir + $sakit + $izin + $alpa;
-                $stmt->bind_param("iiiiiiiii", intval($item['id_karyawan']), $bln, $thn, $hadir, $sakit, $izin, $alpa, $lembur, $total, $hadir, $sakit, $izin, $alpa, $lembur, $total);
-                $stmt->execute(); $stmt->close();
+                $stmt->bind_param("iiiiiiiii", $id_karyawan, $bln, $thn, $hadir, $sakit, $izin, $alpa, $lembur, $total, $hadir, $sakit, $izin, $alpa, $lembur, $total);
+                if ($stmt->execute()) $saved++;
+                $stmt->close();
             }
-            $response = ['status' => 'success', 'message' => 'Data kehadiran disimpan'];
+            $response = ['status' => 'success', 'message' => "Data kehadiran disimpan ($saved data)"];
             break;
         
         // SETTING
@@ -199,8 +254,9 @@ if (isset($_POST['action'])) {
             
             $tgl_masuk = new DateTime($karyawan['tgl_masuk']);
             $tgl_sekarang = new DateTime("$thn-$bln-01");
-            $masa_kerja = $tgl_masuk->diff($tgl_sekarang)->m + ($tgl_masuk->diff($tgl_sekarang)->y * 12);
-            $tunjangan_masa_kerja = ($masa_kerja >= 12) ? min($gaji_pokok * 0.02 * floor($masa_kerja / 12), $gaji_pokok * 0.10) : 0;
+            $diff = $tgl_masuk->diff($tgl_sekarang);
+            $masa_kerja = max(0, $diff->m + ($diff->y * 12) + ($diff->invert ? -1 : 0) * 12);
+            $tunjangan_masa_kerja = ($masa_kerja >= 12) ? min($gaji_pokok * 0.02 * intval($masa_kerja / 12), $gaji_pokok * 0.10) : 0;
             
             $total_penghasilan = $gaji_pokok + $tunjangan_jabatan + $tunjangan_transport + $tunjangan_makan + $tunjangan_kesehatan + $bonus_kehadiran + $bonus_lembur + $tunjangan_masa_kerja;
             
@@ -476,21 +532,21 @@ if (isset($_POST['action'])) {
             <form id="form-karyawan" class="p-6 space-y-4">
                 <input type="hidden" id="k-id">
                 <div class="grid md:grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-medium mb-1">NIK *</label><input type="text" id="k-nik" required class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Nama *</label><input type="text" id="k-nama" required class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" id="k-email" class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">No. HP</label><input type="text" id="k-hp" class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Departemen</label><select id="k-dept" class="w-full px-3 py-2 border rounded-lg"><option value="">-- Pilih --</option></select></div>
-                    <div><label class="block text-sm font-medium mb-1">Jabatan *</label><select id="k-jabatan" required class="w-full px-3 py-2 border rounded-lg"><option value="">-- Pilih --</option><option>Direksi</option><option>General Manager</option><option>Manager</option><option>Assistant Manager</option><option>Supervisor</option><option>Senior Staff</option><option>Staff</option><option>Junior Staff</option><option>Internship</option></select></div>
-                    <div><label class="block text-sm font-medium mb-1">Status</label><select id="k-status" class="w-full px-3 py-2 border rounded-lg"><option value="Aktif">Aktif</option><option value="Non-Aktif">Non-Aktif</option><option value="Resign">Resign</option></select></div>
-                    <div><label class="block text-sm font-medium mb-1">Tgl Masuk *</label><input type="date" id="k-tgl" required class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Gaji Pokok *</label><input type="number" id="k-gaji" required min="0" class="w-full px-3 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium mb-1">NIK *</label><input type="text" id="k-nik" required maxlength="20" placeholder="Contoh: NIK001" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Nama Lengkap *</label><input type="text" id="k-nama" required maxlength="100" placeholder="Masukkan nama lengkap" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" id="k-email" placeholder="nama@email.com" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">No. HP</label><input type="tel" id="k-hp" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Departemen</label><select id="k-dept" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">-- Pilih --</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Jabatan *</label><select id="k-jabatan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">-- Pilih --</option><option>Direksi</option><option>General Manager</option><option>Manager</option><option>Assistant Manager</option><option>Supervisor</option><option>Senior Staff</option><option>Staff</option><option>Junior Staff</option><option>Internship</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Status</label><select id="k-status" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="Aktif">Aktif</option><option value="Non-Aktif">Non-Aktif</option><option value="Resign">Resign</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Tgl Masuk *</label><input type="date" id="k-tgl" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Gaji Pokok *</label><input type="number" id="k-gaji" required min="0" step="1000" placeholder="0" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
                 </div>
-                <div><label class="block text-sm font-medium mb-1">Alamat</label><textarea id="k-alamat" class="w-full px-3 py-2 border rounded-lg" rows="2"></textarea></div>
+                <div><label class="block text-sm font-medium mb-1">Alamat</label><textarea id="k-alamat" placeholder="Masukkan alamat lengkap" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" rows="2"></textarea></div>
                 <div class="grid md:grid-cols-3 gap-4">
-                    <div><label class="block text-sm font-medium mb-1">No. Rekening</label><input type="text" id="k-rek" class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Atas Nama</label><input type="text" id="k-namarek" class="w-full px-3 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium mb-1">Bank</label><input type="text" id="k-bank" class="w-full px-3 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium mb-1">No. Rekening</label><input type="text" id="k-rek" placeholder="Nomor rekening" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Atas Nama</label><input type="text" id="k-namarek" placeholder="Nama di rekening" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-sm font-medium mb-1">Bank</label><input type="text" id="k-bank" placeholder="Nama bank" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
                 </div>
                 <div class="flex gap-3 pt-4"><button type="button" onclick="closeModal('karyawan')" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Batal</button><button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button></div>
             </form>
@@ -578,7 +634,12 @@ if (isset($_POST['action'])) {
         async function loadKaryawan() {
             const r = await api('get_karyawan', { search: document.getElementById('search-karyawan').value, dept: document.getElementById('filter-dept').value });
             const tbody = document.getElementById('tabel-karyawan');
-            if (r.status === 'success' && r.data.length) tbody.innerHTML = r.data.map(k => `<tr class="table-row"><td class="px-4 py-3 font-medium text-blue-600">${k.nik}</td><td class="px-4 py-3">${k.nama}</td><td class="px-4 py-3 text-gray-500">${k.nama_dept || '-'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${k.jabatan.includes('Manager') ? 'bg-blue-100 text-blue-700' : k.jabatan.includes('Supervisor') ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">${k.jabatan}</span></td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${k.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${k.status}</span></td><td class="px-4 py-3 text-right font-medium">${fmtRp(parseFloat(k.gaji_pokok))}</td><td class="px-4 py-3 text-center"><button onclick="editKaryawan(${k.id})" class="text-blue-600 mr-3"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawan(${k.id})" class="text-red-600"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            if (r.status === 'success' && r.data.length) tbody.innerHTML = r.data.map(k => {
+                const jabatan = k.jabatan || 'Staff';
+                const badgeClass = jabatan.includes('Manager') ? 'bg-blue-100 text-blue-700' : jabatan.includes('Supervisor') ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700';
+                const statusClass = k.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                return `<tr class="table-row"><td class="px-4 py-3 font-medium text-blue-600">${k.nik || '-'}</td><td class="px-4 py-3">${k.nama || '-'}</td><td class="px-4 py-3 text-gray-500">${k.nama_dept || '-'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${badgeClass}">${jabatan}</span></td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${statusClass}">${k.status || 'Aktif'}</span></td><td class="px-4 py-3 text-right font-medium">${fmtRp(parseFloat(k.gaji_pokok || 0))}</td><td class="px-4 py-3 text-center"><button onclick="editKaryawan(${k.id})" class="text-blue-600 mr-3"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawan(${k.id})" class="text-red-600"><i class="fas fa-trash"></i></button></td></tr>`;
+            }).join('');
             else tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada</td></tr>';
         }
         function openModalKaryawan() { document.getElementById('form-karyawan').reset(); document.getElementById('k-id').value = ''; document.getElementById('k-tgl').value = new Date().toISOString().split('T')[0]; document.getElementById('m-karyawan-title').textContent = 'Tambah'; document.getElementById('modal-karyawan').classList.remove('hidden'); loadDeptSelect(); }
