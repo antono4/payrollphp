@@ -43,6 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // SQL Tables
             $tables_sql = "
+-- USERS (for authentication)
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    nama_lengkap VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    level ENUM('admin','manager','finance','staff') NOT NULL DEFAULT 'staff',
+    status ENUM('aktif','nonaktif') DEFAULT 'aktif',
+    id_departemen INT,
+    last_login DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_departemen) REFERENCES departemen(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 -- DEPARTEMEN
 CREATE TABLE IF NOT EXISTS departemen (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -179,6 +195,12 @@ INSERT INTO karyawan (nik, nama, email, no_hp, alamat, jabatan, id_departemen, s
 
 INSERT INTO setting_payroll (id, umr, tunjangan_transport, tunjangan_makan, tunjangan_kesehatan, bonus_lembur_per_jam, denda_alpa_per_hari, denda_terlambat_per_kali, pengganti_libur) VALUES
 (1, 5000000, 500000, 300000, 200000, 25000, 100000, 25000, 150000);
+
+INSERT INTO users (username, password, nama_lengkap, email, level, status, id_departemen) VALUES
+('admin', '\$2y\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', 'admin@company.com', 'admin', 'aktif', NULL),
+('manager', '\$2y\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Manager HRD', 'manager@company.com', 'manager', 'aktif', 1),
+('finance', '\$2y\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Finance Manager', 'finance@company.com', 'finance', 'aktif', 2),
+('staff', '\$2y\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Staff Umum', 'staff@company.com', 'staff', 'aktif', NULL);
 ";
             
             $statements = array_filter(array_map('trim', explode(';', $sample_data)));

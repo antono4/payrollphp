@@ -3,7 +3,7 @@
  * =====================================================
  * APLIKASI PAYROLL SUPER LENGKAP - ONE PAGE CODING
  * Full Stack Development with Native PHP
- * Version 2.0 - Enhanced Edition
+ * Version 2.1 - Enhanced Edition with User Auth
  * =====================================================
  */
 
@@ -12,6 +12,9 @@ define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'db_payroll_v2');
+
+// ==================== SESSION ====================
+session_start();
 
 // ==================== KONEKSI DATABASE ====================
 class Database {
@@ -31,6 +34,7 @@ class Database {
     public function getConnection() { return $this->connection; }
 }
 
+// ==================== HELPER FUNCTIONS ====================
 function formatRupiah($angka) { return 'Rp ' . number_format($angka, 0, ',', '.'); }
 function getNamaBulan($bulan) {
     $nama = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -41,14 +45,183 @@ function tanggalIndonesia($date) {
     return date('j', strtotime($date)) . ' ' . $bulan[date('n', strtotime($date))] . ' ' . date('Y', strtotime($date));
 }
 
+// ==================== USER LEVELS ====================
+define('LEVEL_ADMIN', 'admin');
+define('LEVEL_MANAGER', 'manager');
+define('LEVEL_FINANCE', 'finance');
+define('LEVEL_STAFF', 'staff');
+
+// Role permissions
+$role_permissions = [
+    LEVEL_ADMIN => ['dashboard', 'departemen', 'karyawan', 'kehadiran', 'setting', 'payroll', 'laporan', 'users'],
+    LEVEL_MANAGER => ['dashboard', 'departemen', 'karyawan', 'kehadiran', 'payroll', 'laporan'],
+    LEVEL_FINANCE => ['dashboard', 'kehadiran', 'payroll', 'laporan'],
+    LEVEL_STAFF => ['dashboard', 'laporan']
+];
+
+function isLoggedIn() { return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']); }
+function getCurrentUser() { return $_SESSION['user'] ?? null; }
+function getUserLevel() { return $_SESSION['user']['level'] ?? null; }
+function hasPermission($module) {
+    global $role_permissions;
+    $level = getUserLevel();
+    return isset($role_permissions[$level]) && in_array($module, $role_permissions[$level]);
+}
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header('Location: login.php');
+        exit;
+    }
+}
+function hashPassword($password) { return password_hash($password, PASSWORD_DEFAULT); }
+function verifyPassword($password, $hash) { return password_verify($password, $hash); }
+
 // ==================== HANDLING AJAX ====================
 $db = Database::getInstance();
 $conn = $db->getConnection();
 $response = ['status' => 'error', 'message' => 'Aksi tidak valid'];
 
+// ========== AUTHENTICATION CHECK FOR AJAX ==========
 if (isset($_POST['action'])) {
+    // Allow login action without authentication
+    $public_actions = ['login', 'check_auth'];
+    if (!in_array($_POST['action'], $public_actions) && !isLoggedIn()) {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Silakan login terlebih dahulu']);
+        exit;
+    }
+    
     header('Content-Type: application/json');
     switch ($_POST['action']) {
+        // ========== USER AUTHENTICATION ==========
+        case 'login':
+            $username = trim($_POST['username'] ?? '');
+            $password = $_POST['password'] ?? '';
+            
+            if (empty($username) || empty($password)) {
+                $response = ['status' => 'error', 'message' => 'Username dan password harus diisi'];
+                break;
+            }
+            
+            $stmt = $conn->prepare("SELECT u.*, d.nama_dept FROM users u LEFT JOIN departemen d ON u.id_departemen=d.id WHERE u.username=? AND u.status='aktif'");
+            $stmt->bind_param("s", $username);
+            $stmt->execute();
+            $user = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            
+            if ($user && verifyPassword($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user'] = [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'nama' => $user['nama_lengkap'],
+                    'email' => $user['email'],
+                    'level' => $user['level'],
+                    'id_departemen' => $user['id_departemen'],
+                    'nama_dept' => $user['nama_dept'] ?? ''
+                ];
+                $response = ['status' => 'success', 'message' => 'Login berhasil', 'user' => $_SESSION['user']];
+            } else {
+                $response = ['status' => 'error', 'message' => 'Username atau password salah'];
+            }
+            break;
+            
+        case 'logout':
+            session_destroy();
+            $response = ['status' => 'success', 'message' => 'Logout berhasil'];
+            break;
+            
+        case 'get_current_user':
+            if (isLoggedIn()) {
+                $response = ['status' => 'success', 'user' => getCurrentUser()];
+            } else {
+                $response = ['status' => 'error', 'message' => 'Not logged in'];
+            }
+            break;
+            
+        case 'check_auth':
+            $response = ['status' => 'success', 'logged_in' => isLoggedIn(), 'user' => getCurrentUser()];
+            break;
+        
+        // ========== USER MANAGEMENT ==========
+        case 'get_users':
+            if (!hasPermission('users')) {
+                $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $result = $conn->query("SELECT u.id, u.username, u.nama_lengkap, u.email, u.level, u.status, u.last_login, d.nama_dept FROM users u LEFT JOIN departemen d ON u.id_departemen=d.id ORDER BY u.id DESC");
+            $response = ['status' => 'success', 'data' => $result->fetch_all(MYSQLI_ASSOC)];
+            break;
+            
+        case 'simpan_user':
+            if (!hasPermission('users')) {
+                $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $id = !empty($_POST['id']) ? intval($_POST['id']) : null;
+            $username = trim($_POST['username'] ?? '');
+            $nama = trim($_POST['nama_lengkap'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $level = trim($_POST['level'] ?? LEVEL_STAFF);
+            $status = trim($_POST['status'] ?? 'aktif');
+            $id_dept = !empty($_POST['id_departemen']) ? intval($_POST['id_departemen']) : null;
+            
+            if (empty($username) || empty($nama)) {
+                $response = ['status' => 'error', 'message' => 'Username dan Nama harus diisi'];
+                break;
+            }
+            
+            if ($id) {
+                if (!empty($password)) {
+                    $hash = hashPassword($password);
+                    $stmt = $conn->prepare("UPDATE users SET username=?, nama_lengkap=?, email=?, password=?, level=?, status=?, id_departemen=? WHERE id=?");
+                    $stmt->bind_param("sssssssi", $username, $nama, $email, $hash, $level, $status, $id_dept, $id);
+                } else {
+                    $stmt = $conn->prepare("UPDATE users SET username=?, nama_lengkap=?, email=?, level=?, status=?, id_departemen=? WHERE id=?");
+                    $stmt->bind_param("ssssssi", $username, $nama, $email, $level, $status, $id_dept, $id);
+                }
+            } else {
+                if (empty($password)) {
+                    $response = ['status' => 'error', 'message' => 'Password harus diisi untuk user baru'];
+                    break;
+                }
+                $hash = hashPassword($password);
+                $stmt = $conn->prepare("INSERT INTO users (username, password, nama_lengkap, email, level, status, id_departemen) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("sssssss", $username, $hash, $nama, $email, $level, $status, $id_dept);
+            }
+            $response = $stmt->execute() ? ['status' => 'success', 'message' => 'User berhasil disimpan'] : ['status' => 'error', 'message' => 'Gagal menyimpan user'];
+            $stmt->close();
+            break;
+            
+        case 'hapus_user':
+            if (!hasPermission('users')) {
+                $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $id = intval($_POST['id']);
+            if ($id == $_SESSION['user_id']) {
+                $response = ['status' => 'error', 'message' => 'Tidak dapat menghapus akun sendiri'];
+                break;
+            }
+            $stmt = $conn->prepare("DELETE FROM users WHERE id=?");
+            $stmt->bind_param("i", $id);
+            $response = $stmt->execute() ? ['status' => 'success', 'message' => 'User berhasil dihapus'] : ['status' => 'error', 'message' => 'Gagal menghapus user'];
+            $stmt->close();
+            break;
+            
+        case 'get_user_by_id':
+            if (!hasPermission('users')) {
+                $response = ['status' => 'error', 'message' => 'Akses ditolak'];
+                break;
+            }
+            $stmt = $conn->prepare("SELECT id, username, nama_lengkap, email, level, status, id_departemen FROM users WHERE id=?");
+            $stmt->bind_param("i", intval($_POST['id']));
+            $stmt->execute();
+            $response = ['status' => 'success', 'data' => $stmt->get_result()->fetch_assoc()];
+            $stmt->close();
+            break;
+        
         // DEPARTEMEN
         case 'get_departemen':
             $result = $conn->query("SELECT * FROM departemen ORDER BY nama_dept ASC");
@@ -356,7 +529,40 @@ if (isset($_POST['action'])) {
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div class="flex">
+    <!-- ========== LOGIN FORM ========== -->
+    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-950 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center"><i class="fas fa-calculator text-3xl text-white"></i></div>
+                    <div><h1 class="text-2xl font-bold text-white">Payroll System</h1><p class="text-blue-200">PT. Maju Bersama</p></div>
+                </div>
+            </div>
+            <div class="p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
+                <form id="form-login" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input type="text" id="login-username" required placeholder="Masukkan username" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="login-password" required placeholder="Masukkan password" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>
+                </form>
+                <div class="mt-6 text-center text-sm text-gray-500">
+                    <p>Demo Login:</p>
+                    <p class="mt-1"><strong>Admin:</strong> admin / admin123</p>
+                    <p><strong>Manager:</strong> manager / manager123</p>
+                    <p><strong>Finance:</strong> finance / finance123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN APP ========== -->
+    <div id="app-container" class="flex hidden">
         <!-- SIDEBAR -->
         <aside class="w-64 bg-gradient-to-b from-blue-900 to-blue-950 text-white min-h-screen fixed left-0 top-0 overflow-y-auto no-print z-50">
             <div class="p-6 border-b border-blue-800">
@@ -373,8 +579,9 @@ if (isset($_POST['action'])) {
                 <button onclick="switchTab('setting')" id="tab-setting" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"><i class="fas fa-sliders-h w-6"></i><span>Pengaturan</span></button>
                 <button onclick="switchTab('payroll')" id="tab-payroll" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"><i class="fas fa-calculator w-6"></i><span>Proses Gaji</span></button>
                 <button onclick="switchTab('laporan')" id="tab-laporan" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"><i class="fas fa-chart-bar w-6"></i><span>Laporan</span></button>
+                <button onclick="switchTab('users')" id="tab-users" class="sidebar-item w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3"><i class="fas fa-user-cog w-6"></i><span>Manajemen User</span></button>
             </nav>
-            <div class="p-4 border-t border-blue-800 mt-auto"><p class="text-xs text-blue-300 text-center">v2.0 Super Lengkap © 2024</p></div>
+            <div class="p-4 border-t border-blue-800 mt-auto"><p class="text-xs text-blue-300 text-center">v2.1 with User Auth © 2024</p></div>
         </aside>
 
         <!-- MAIN -->
@@ -383,8 +590,25 @@ if (isset($_POST['action'])) {
                 <div class="flex items-center justify-between px-6 py-4">
                     <div><h2 id="page-title" class="text-2xl font-bold text-gray-800">Dashboard</h2><p class="text-gray-500 text-sm"><?php echo tanggalIndonesia(date('Y-m-d')); ?></p></div>
                     <div class="flex items-center space-x-4">
-                        <div class="relative"><input type="text" placeholder="Cari..." class="pl-10 pr-4 py-2 border rounded-lg w-64"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div>
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                        <!-- USER DROPDOWN -->
+                        <div class="relative">
+                            <button onclick="toggleUserDropdown()" class="flex items-center space-x-3 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors">
+                                <div id="user-avatar" class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">U</div>
+                                <div class="text-left hidden md:block">
+                                    <p id="user-name" class="text-sm font-medium text-gray-800">User</p>
+                                    <p id="user-level" class="text-xs text-gray-500">Level</p>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-50">
+                                <div class="px-4 py-3 border-b">
+                                    <p id="dropdown-name" class="font-medium text-gray-800">User</p>
+                                    <p id="dropdown-email" class="text-sm text-gray-500">user@email.com</p>
+                                    <span id="dropdown-level" class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">Admin</span>
+                                </div>
+                                <button onclick="logout()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -553,6 +777,36 @@ if (isset($_POST['action'])) {
         </div>
     </div>
 
+    <!-- ========== MODAL USER ========== -->
+    <div id="modal-user" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md my-8">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl"><h3 id="m-user-title" class="text-lg font-semibold text-white">Tambah User</h3></div>
+            <form id="form-user" class="p-6 space-y-4">
+                <input type="hidden" id="user-id">
+                <div><label class="block text-sm font-medium mb-1">Username *</label><input type="text" id="user-username" required placeholder="Username login" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-sm font-medium mb-1">Nama Lengkap *</label><input type="text" id="user-nama" required placeholder="Nama lengkap" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" id="user-email" placeholder="email@email.com" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-sm font-medium mb-1">Password <span id="password-hint" class="text-gray-400">(kosongkan jika tidak diubah)</span></label><input type="password" id="user-password" placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1">Level *</label><select id="user-level" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="admin">Admin</option><option value="manager">Manager</option><option value="finance">Finance</option><option value="staff">Staff</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Status</label><select id="user-status" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="aktif">Aktif</option><option value="nonaktif">Non-Aktif</option></select></div>
+                </div>
+                <div><label class="block text-sm font-medium mb-1">Departemen</label><select id="user-dept" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">-- Tidak Ada --</option></select></div>
+                <div class="flex gap-3 pt-4"><button type="button" onclick="closeModal('user')" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Batal</button><button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== USERS TAB CONTENT ========== -->
+    <div id="content-users" class="tab-content">
+        <div class="bg-white rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold"><i class="fas fa-user-cog text-blue-600 mr-2"></i>Manajemen User</h2><button onclick="openModalUser()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"><i class="fas fa-plus mr-2"></i>Tambah User</button></div>
+            <div class="overflow-x-auto">
+                <table class="w-full"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Username</th><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Nama</th><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Email</th><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Level</th><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Departemen</th><th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th><th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">Aksi</th></tr></thead><tbody id="tabel-users" class="divide-y"></tbody></table>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-slip" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-8">
             <div id="printSlip">
@@ -571,17 +825,112 @@ if (isset($_POST['action'])) {
     </div>
 
     <script>
+        let currentUser = null;
+        let userPermissions = [];
+        
         const fmtRp = (n) => 'Rp ' + n.toLocaleString('id-ID');
-        const api = async (a, d = {}) => { const fd = new FormData(); fd.append('action', a); for (const k in d) fd.append(k, d[k]); try { const r = await fetch('index.php', { method: 'POST', body: fd }); return await r.json(); } catch { return { status: 'error', message: 'Koneksi gagal' }; } };
+        const api = async (a, d = {}) => { const fd = new FormData(); fd.append('action', a); for (const k in d) fd.append(k, d[k]); try { const r = await fetch('index.php', { method: 'POST', body: fd }); const j = await r.json(); if (j.message === 'Silakan login terlebih dahulu') { logout(); } return j; } catch { return { status: 'error', message: 'Koneksi gagal' }; } };
         
         const toast = (m, t = 'success') => { document.getElementById('toast-message').textContent = m; document.getElementById('toast-icon').className = t === 'success' ? 'fas fa-check-circle text-green-400' : 'fas fa-exclamation-circle text-red-400'; const x = document.getElementById('toast'); x.classList.remove('translate-y-full', 'opacity-0'); x.classList.add('translate-y-0', 'opacity-100'); setTimeout(() => x.classList.remove('translate-y-0', 'opacity-100'), 3000); };
         
+        // ========== AUTHENTICATION ==========
+        async function checkAuth() {
+            const r = await api('check_auth');
+            if (r.logged_in && r.user) {
+                currentUser = r.user;
+                showApp(r.user);
+            } else {
+                showLogin();
+            }
+        }
+        
+        function showLogin() {
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+        }
+        
+        function showApp(user) {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            updateUserUI(user);
+            updateSidebarPermissions(user.level);
+            loadDashboard();
+            loadDeptSelect();
+        }
+        
+        function updateUserUI(user) {
+            document.getElementById('user-name').textContent = user.nama || user.username;
+            document.getElementById('user-level').textContent = user.level.charAt(0).toUpperCase() + user.level.slice(1);
+            document.getElementById('user-avatar').textContent = (user.nama || user.username).charAt(0).toUpperCase();
+            document.getElementById('dropdown-name').textContent = user.nama || user.username;
+            document.getElementById('dropdown-email').textContent = user.email || '-';
+            const levelBadge = document.getElementById('dropdown-level');
+            levelBadge.textContent = user.level.charAt(0).toUpperCase() + user.level.slice(1);
+            levelBadge.className = 'inline-block mt-1 px-2 py-0.5 text-xs rounded-full ' + 
+                (user.level === 'admin' ? 'bg-red-100 text-red-700' : 
+                 user.level === 'manager' ? 'bg-blue-100 text-blue-700' : 
+                 user.level === 'finance' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700');
+        }
+        
+        function updateSidebarPermissions(level) {
+            const permissions = {
+                admin: ['dashboard', 'departemen', 'karyawan', 'kehadiran', 'setting', 'payroll', 'laporan', 'users'],
+                manager: ['dashboard', 'departemen', 'karyawan', 'kehadiran', 'payroll', 'laporan'],
+                finance: ['dashboard', 'kehadiran', 'payroll', 'laporan'],
+                staff: ['dashboard', 'laporan']
+            };
+            userPermissions = permissions[level] || [];
+            
+            document.querySelectorAll('.sidebar-item').forEach(btn => {
+                const tabId = btn.id.replace('tab-', '');
+                if (tabId === 'users' && level !== 'admin') {
+                    btn.style.display = 'none';
+                } else if (!userPermissions.includes(tabId)) {
+                    btn.style.display = 'none';
+                } else {
+                    btn.style.display = 'flex';
+                }
+            });
+        }
+        
+        function toggleUserDropdown() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#user-dropdown') && !e.target.closest('[onclick="toggleUserDropdown()"]')) {
+                document.getElementById('user-dropdown')?.classList.add('hidden');
+            }
+        });
+        
+        // Login form handler
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const r = await api('login', { username: document.getElementById('login-username').value, password: document.getElementById('login-password').value });
+            toast(r.message, r.status);
+            if (r.status === 'success') {
+                currentUser = r.user;
+                showApp(r.user);
+            }
+        });
+        
+        async function logout() {
+            await api('logout');
+            currentUser = null;
+            document.getElementById('form-login').reset();
+            showLogin();
+        }
+        
         const switchTab = (tab) => {
+            if (!userPermissions.includes(tab)) {
+                toast('Anda tidak memiliki akses ke halaman ini', 'error');
+                return;
+            }
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('active'));
             document.getElementById('content-' + tab).classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
-            const titles = { dashboard: 'Dashboard', departemen: 'Departemen', karyawan: 'Karyawan', kehadiran: 'Kehadiran', setting: 'Pengaturan', payroll: 'Proses Gaji', laporan: 'Laporan Gaji' };
+            const titles = { dashboard: 'Dashboard', departemen: 'Departemen', karyawan: 'Karyawan', kehadiran: 'Kehadiran', setting: 'Pengaturan', payroll: 'Proses Gaji', laporan: 'Laporan Gaji', users: 'Manajemen User' };
             document.getElementById('page-title').textContent = titles[tab];
             if (tab === 'dashboard') loadDashboard();
             else if (tab === 'departemen') loadDept();
@@ -590,6 +939,7 @@ if (isset($_POST['action'])) {
             else if (tab === 'setting') loadSetting();
             else if (tab === 'payroll') loadPayroll();
             else if (tab === 'laporan') { loadDeptSelect(); loadLaporan(); }
+            else if (tab === 'users') { loadDeptSelect(); loadUsers(); }
         };
         
         const closeModal = (n) => document.getElementById('modal-' + n).classList.add('hidden');
@@ -703,9 +1053,90 @@ if (isset($_POST['action'])) {
             } else toast(r.message, 'error');
         }
         
+        // ========== USER MANAGEMENT ==========
+        async function loadUsers() {
+            const r = await api('get_users');
+            const tbody = document.getElementById('tabel-users');
+            if (r.status === 'success' && r.data.length) {
+                tbody.innerHTML = r.data.map(u => {
+                    const levelClass = u.level === 'admin' ? 'bg-red-100 text-red-700' : u.level === 'manager' ? 'bg-blue-100 text-blue-700' : u.level === 'finance' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700';
+                    const statusClass = u.status === 'aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                    const isSelf = currentUser && currentUser.id == u.id;
+                    return `<tr class="table-row"><td class="px-4 py-3 font-medium">${u.username}</td><td class="px-4 py-3">${u.nama_lengkap}</td><td class="px-4 py-3 text-gray-500">${u.email || '-'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${levelClass}">${u.level}</span></td><td class="px-4 py-3 text-gray-500">${u.nama_dept || '-'}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full ${statusClass}">${u.status}</span></td><td class="px-4 py-3 text-center">${isSelf ? '<span class="text-gray-400 text-xs">Akun Anda</span>' : `<button onclick="editUser(${u.id})" class="text-blue-600 mr-3"><i class="fas fa-edit"></i></button><button onclick="hapusUser(${u.id})" class="text-red-600"><i class="fas fa-trash"></i></button>`}</td></tr>`;
+                }).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada user</td></tr>';
+            }
+        }
+        
+        function openModalUser() {
+            document.getElementById('form-user').reset();
+            document.getElementById('user-id').value = '';
+            document.getElementById('m-user-title').textContent = 'Tambah User';
+            document.getElementById('password-hint').style.display = 'none';
+            document.getElementById('user-password').required = true;
+            document.getElementById('modal-user').classList.remove('hidden');
+            loadDeptSelectForUser();
+        }
+        
+        async function loadDeptSelectForUser() {
+            const r = await api('get_departemen');
+            if (r.status === 'success') {
+                const opts = r.data.map(d => `<option value="${d.id}">${d.nama_dept}</option>`).join('');
+                document.getElementById('user-dept').innerHTML = '<option value="">-- Tidak Ada --</option>' + opts;
+            }
+        }
+        
+        async function editUser(id) {
+            const r = await api('get_user_by_id', { id });
+            if (r.status === 'success' && r.data) {
+                const u = r.data;
+                document.getElementById('user-id').value = u.id;
+                document.getElementById('user-username').value = u.username;
+                document.getElementById('user-nama').value = u.nama_lengkap;
+                document.getElementById('user-email').value = u.email || '';
+                document.getElementById('user-level').value = u.level;
+                document.getElementById('user-status').value = u.status;
+                document.getElementById('user-dept').value = u.id_departemen || '';
+                document.getElementById('user-password').value = '';
+                document.getElementById('m-user-title').textContent = 'Edit User';
+                document.getElementById('password-hint').style.display = 'inline';
+                document.getElementById('user-password').required = false;
+                document.getElementById('modal-user').classList.remove('hidden');
+                loadDeptSelectForUser();
+            }
+        }
+        
+        async function hapusUser(id) {
+            if (!confirm('Yakin ingin menghapus user ini?')) return;
+            const r = await api('hapus_user', { id });
+            toast(r.message, r.status);
+            if (r.status === 'success') loadUsers();
+        }
+        
+        document.getElementById('form-user').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const d = {
+                id: document.getElementById('user-id').value,
+                username: document.getElementById('user-username').value,
+                nama_lengkap: document.getElementById('user-nama').value,
+                email: document.getElementById('user-email').value,
+                password: document.getElementById('user-password').value,
+                level: document.getElementById('user-level').value,
+                status: document.getElementById('user-status').value,
+                id_departemen: document.getElementById('user-dept').value
+            };
+            const r = await api('simpan_user', d);
+            toast(r.message, r.status);
+            if (r.status === 'success') {
+                closeModal('user');
+                loadUsers();
+            }
+        });
+        
         // Init
-        document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadDeptSelect(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal('dept'); closeModal('karyawan'); closeModal('slip'); });
+        document.addEventListener('DOMContentLoaded', () => { checkAuth(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('dept'); closeModal('karyawan'); closeModal('user'); closeModal('slip'); } });
         document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); }));
     </script>
 </body>
