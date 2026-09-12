@@ -1,1 +1,30 @@
-Last updated: 2026-09-12 22:53:27 WIB
+# payrollphp
+
+
+
+## 📋 Overview
+
+This repository contains **13 files** and is built with the following technologies:
+
+HTML, PHP
+
+## 🚀 Quick Start
+
+```bash
+php -S localhost:8000
+```
+
+## ✨ Features
+
+- 📝 Auto-generated documentation
+
+## 🛠️ Technologies
+
+HTML, PHP
+
+## 📄 License
+
+MIT License
+
+---
+*Last updated: 2026-09-12 23:09:03 WIB*
